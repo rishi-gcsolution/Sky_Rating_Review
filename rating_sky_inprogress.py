@@ -16,7 +16,7 @@ import requests
 from datetime import datetime
 from google_play_scraper import app, Sort, reviews
 from datetime import datetime,timedelta
-
+import matplotlib.pyplot as plt
 # Replace 'com.cloudtradetech.sky' with the package name of the app you want to scrape.
 app_id = 'com.cloudtradetech.sky'
 
@@ -125,17 +125,53 @@ def Trend_of_Tminus_days(T_minus_days):
     #full_filtered_review() takes string type date 
     trend_line_data=full_filtered_review(end_date,today_date)
     lis=[]
-    required_date=current_datetime - timedelta(days=T_minus_days)
+    required_date=(current_datetime - timedelta(days=T_minus_days)).strftime("%Y-%m-%d")
     def scoreSum_and_date(required_date):
         
         day_sum=[score['score'] for score in trend_line_data[0]
-                 if score['at'].strftime("%Y-%m-%d")==required_date.strftime("%Y-%m-%d")
+                 if score['at'].strftime("%Y-%m-%d")==required_date
                  ]
-        return [sum(day_sum),required_date]
+        return [sum(day_sum),required_date,len(day_sum)]
         
+    while T_minus_days>0:
+        required_date=(current_datetime - timedelta(days=T_minus_days)).strftime("%Y-%m-%d")
+        lis.append(scoreSum_and_date(required_date))
+        T_minus_days-=1
+    lis = [
+    [sublist[0] / sublist[2],sublist[1]] if sublist[2] != 0 else [0,sublist[1]]
+    for sublist in lis
+    ]
+    return lis       
     
-    
-    for score in trend_line_data[0]:
+
+xx=Trend_of_Tminus_days(T_minus_days)
+# Extract x and y values from the list
+x_values = [pair[1] for pair in xx]
+y_values = [pair[0] for pair in xx]
+
+# Plot the line plot
+plt.figure(figsize=(10, 5))
+plt.subplot(1, 2, 1)  # 1 row, 2 columns, subplot 1
+plt.plot(x_values, y_values, marker='o', linestyle='-', color='b')
+plt.xlabel('X-axis')
+plt.ylabel('Y-axis')
+plt.title('Line Plot: xx[0] on Y-axis and xx[1] on X-axis')
+plt.grid(True)
+
+# Create a histogram
+plt.subplot(1, 2, 2)  # 1 row, 2 columns, subplot 2
+plt.hist2d(x_values, y_values, bins=(10, 10), cmap=plt.cm.Blues)
+plt.xlabel('X Axis')
+plt.ylabel('Y Axis')
+plt.title('Histogram of X and Y values')
+plt.colorbar()
+
+# Show the plot
+plt.tight_layout()  # Adjust layout to prevent overlapping
+plt.show()
+
+
+for score in trend_line_data[0]:
         lis.append(score['score'])
         print(score['score'])
           
