@@ -11,7 +11,7 @@ Created on Fri Nov 10 11:35:03 2023
 
 @author: asus
 """
-
+import pandas as pd
 import requests
 from datetime import datetime
 from google_play_scraper import app, Sort, reviews
@@ -170,6 +170,82 @@ plt.colorbar()
 plt.tight_layout()  # Adjust layout to prevent overlapping
 plt.show()
 
+
+
+#######################################################
+# Split based on total reviews given
+time_duration=11
+def net_split_of_all_reviews(time_duration):
+    net_split={'5':0,'4':0,'3':0,'2':0,'1':0}
+    if time_duration=="all":
+        for score in full_filtered[0]:
+            net_split[str(score['score'])]+=1
+            
+    if isinstance(time_duration, int):    
+        for score in full_filtered[1]:
+            net_split[str(score['score'])]+=1
+    
+    return net_split
+            
+            
+
+net_split_data = net_split_of_all_reviews(time_duration)
+
+# Plotting
+plt.bar(net_split_data.keys(), net_split_data.values())
+plt.xlabel('Score')
+plt.ylabel('Count')
+plt.title('Net Split of All Reviews')
+plt.show()
+           
+#########################################################################
+#split trend wise with respect to previous days
+########################################################################
+
+def split_trendwise_wrt_previous_days(T_minus_days):
+    def rating_count_fun(data_input):
+        # Create a DataFrame
+        df = pd.DataFrame(data_input)
+        #converting datetime to string of format yyyy-mm-dd
+        df['at'] = df['at'].dt.strftime("%Y-%m-%d")
+       
+            
+        # Count the number of ratings for each score on each day
+        rating_counts = df.groupby(['at', 'score']).size().unstack(fill_value=0)
+            
+        # Rename columns for clarity
+        rating_counts.columns = [f'{col} Star Ratings' for col in rating_counts.columns]
+            
+        # Add a column for Total Ratings
+        rating_counts['Total Ratings'] = rating_counts.sum(axis=1)
+        
+        # Reset the index for a clean DataFrame
+        rating_counts.reset_index(inplace=True)
+        
+        return rating_counts
+    
+def thumbs_count():
+    pass
+
+
+#######################################################################
+#saving all the information on csv file
+
+
+df.to_csv('output_dataframe.csv', index=False)
+
+
+    
+    if T_minus_days=='all':
+        rating_count_fun(full_filtered[0])
+    if isinstance(time_duration, int):   
+        rating_count_fun(full_filtered[1])
+    return "wrong inputed data"
+#########################################################################
+
+    
+    
+    
 
 for score in trend_line_data[0]:
         lis.append(score['score'])
