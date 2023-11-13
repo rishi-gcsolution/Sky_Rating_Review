@@ -31,7 +31,11 @@ country = 'in'
 # Specify start and end dates for filtering format date= yyyy-mm-dd
 start_date_str = "2023-11-01"  # Replace with your desired start date
 end_date_str = "2023-11-03"  # Replace with your desired end date
+T_minus_days=10
 
+##################################
+# Current datetime module
+##################################
 
 
 def get_current_datetime():
@@ -51,11 +55,8 @@ def get_current_datetime():
         return None
    
 
-def full_filtered_review(start_date_str,end_date_str):
+def full_review():
     
-    #Convert start and end dates to datetime objects
-    start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
-    end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
     
     # Fetch the reviews sorted by date in descending order
     reviews_result, _ = reviews(
@@ -65,6 +66,14 @@ def full_filtered_review(start_date_str,end_date_str):
         sort=Sort.NEWEST,
         count=10000,  # Number of reviews to retrieve (adjust as needed)
     )
+    return reviews_result
+    
+def filtered_review(start_date_str,end_date_str):
+    reviews_result=full_review()
+    
+    #Convert start and end dates to datetime objects
+    start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+    end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
     
     # Filter reviews based on date range given as start date and end date
     filtered_reviews = [
@@ -72,46 +81,30 @@ def full_filtered_review(start_date_str,end_date_str):
         for review in reviews_result
         if start_date <= review['at'] <= end_date
     ]
-    return (reviews_result,filtered_reviews)
+    return filtered_reviews
 
-##################################
-# Current datetime module
-##################################
+qqqq=filtered_review(start_date_str,end_date_str)
 
  
-    
-    
-  
-#fetching the current datetime
-current_datetime = get_current_datetime()
-
-if current_datetime:
-    print(f"Current Datetime: {current_datetime}")
-else:
-    print("Failed to fetch current datetime.")
-
-############################
-
 ################################
 #calculation of overall rating and separate rating based on  datetime interval
 
-full_filtered=full_filtered_review(start_date_str,end_date_str)
 
 overall_rating=0
 interval_rating=0
-for review in full_filtered[0]:
+for review in full_review():
     overall_rating+=review['score']
-overall_rating=overall_rating/len(full_filtered[0])
+overall_rating=overall_rating/len(full_review())
 
 interval_rating = sum([
     review['score']
-    for review in full_filtered[1]])/len(full_filtered[1])
+    for review in filtered_review(start_date_str,end_date_str)])/len(filtered_review(start_date_str,end_date_str))
 
 
 
 ###################################
 #Enter the no of T minus days
-T_minus_days=10
+#T_minus_days=10
 
 # Subtract days from the current datetime
 #result_datetime = current_datetime - timedelta(days=T_minus_days)
@@ -123,21 +116,21 @@ T_minus_days=10
 def Trend_of_Tminus_days(T_minus_days):
     
     
-    today_date=get_current_datetime().strftime("%Y-%m-%d")
-    end_date=(current_datetime - timedelta(days=T_minus_days)).strftime("%Y-%m-%d")
+    #today_date=get_current_datetime().strftime("%Y-%m-%d")
+    #end_date=(get_current_datetime() - timedelta(days=T_minus_days)).strftime("%Y-%m-%d")
     #full_filtered_review() takes string type date 
-    trend_line_data=full_filtered_review(end_date,today_date)
+    #trend_line_data=full_filtered_review(end_date,today_date)
     lis=[]
-    required_date=(current_datetime - timedelta(days=T_minus_days)).strftime("%Y-%m-%d")
+    required_date=(get_current_datetime() - timedelta(days=T_minus_days)).strftime("%Y-%m-%d")
     def scoreSum_and_date(required_date):
         
-        day_sum=[score['score'] for score in trend_line_data[0]
+        day_sum=[score['score'] for score in full_review()
                  if score['at'].strftime("%Y-%m-%d")==required_date
                  ]
         return [sum(day_sum),required_date,len(day_sum)]
         
     while T_minus_days>0:
-        required_date=(current_datetime - timedelta(days=T_minus_days)).strftime("%Y-%m-%d")
+        required_date=(get_current_datetime() - timedelta(days=T_minus_days)).strftime("%Y-%m-%d")
         lis.append(scoreSum_and_date(required_date))
         T_minus_days-=1
     lis = [
@@ -182,22 +175,27 @@ plt.show()
 
 #######################################################
 # Split based on total reviews given
-time_duration=11
+
 #T_minus days is time duration
-def net_split_of_all_reviews(time_duration):
+def net_split_of_all_reviews(duration_of_T_minusDays):
     net_split={'5':0,'4':0,'3':0,'2':0,'1':0}
-    if time_duration=="all":
-        for score in full_filtered[0]:
+    
+    if duration_of_T_minusDays=="all":
+        for score in full_review():
             net_split[str(score['score'])]+=1
             
-    if isinstance(time_duration, int):    
-        for score in full_filtered[1]:
+    if isinstance(duration_of_T_minusDays, int):
+        
+        end_date=get_current_datetime().strftime("%Y-%m-%d")
+        start_date=(get_current_datetime() - timedelta(days=duration_of_T_minusDays)).strftime("%Y-%m-%d")
+                
+        for score in filtered_review(start_date,end_date):
             net_split[str(score['score'])]+=1
     
     return net_split
             
 
-net_split_data = net_split_of_all_reviews(time_duration)
+#net_split_data = net_split_of_all_reviews('all')
 
 # Plotting
 plt.bar(net_split_data.keys(), net_split_data.values())
@@ -210,7 +208,8 @@ plt.show()
 #split trend wise with respect to previous days this function is giving no of 5star 4star 3star 2star 1star given perticular days
 ########################################################################
 
-def split_trendwise_wrt_previous_days(T_minus_days):
+def split_trendwise_wrt_previous_days(duration_of_T_minusDays):
+    rating_count=0
     def rating_count_fun(data_input):
         #data_input=full_filtered[0]
         # Create a DataFrame
@@ -233,22 +232,34 @@ def split_trendwise_wrt_previous_days(T_minus_days):
         
         return rating_counts
     
-    if T_minus_days=="all":
-        rating_count_fun(full_filtered[0])
-    if isinstance(T_minus_days, int):
-        rating_count_fun(full_filtered[1])
-    return 0
+    if duration_of_T_minusDays=="all":
+        rating_count=rating_count_fun(full_review())
+    if isinstance(duration_of_T_minusDays, int):
+        end_date=get_current_datetime().strftime("%Y-%m-%d")
+        start_date=(get_current_datetime() - timedelta(days=duration_of_T_minusDays)).strftime("%Y-%m-%d")
+        rating_count=rating_count_fun(filtered_review(start_date,end_date))
+    return rating_count
     
-tttttt=split_trendwise_wrt_previous_days(T_minus_days)
+
     
 def thumbs_count():
     pass
 
 def get_no_Of_ratingsYesterday_avgRating():
-    yesterday=(get_current_datetime() - timedelta(days=2)).strftime("%Y-%m-%d")
-    yesterdays_review=full_filtered_review(yesterday,get_current_datetime().strftime("%Y-%m-%d"))
-    net_split_of_all_reviews()
+   
+    yesterdays=split_trendwise_wrt_previous_days(2)    
+        
+    # Calculate weighted average for each row across specified columns
+    ratings_columns = ['1 Star Ratings', '2 Star Ratings', '3 Star Ratings', '4 Star Ratings', '5 Star Ratings']
+    weighted_average = (
+        (yesterdays[ratings_columns] * [1, 2, 3, 4, 5]).sum(axis=1) / yesterdays['Total Ratings']
+    )
+    yesterdays['Weighted Average Rating'] = weighted_average
+    return yesterdays
 
+def percent_split_change():
+    
+    pass
 ###########################################################################
 # saving to ms Word
 
@@ -264,26 +275,42 @@ doc = Document()
 data_to_write = f"                  REVIEW AND RATING ANALYSIS OF SKY\n"
 doc.add_paragraph(data_to_write)
 
-data_to_write = f" Date of Analysis = {current_datetime.strftime('%Y-%m-%d')}\n also LAST {T_minus_days} analysis \n"
+data_to_write = f" Date of Analysis = {get_current_datetime().strftime('%Y-%m-%d')}\n also LAST {T_minus_days}  analysis \n"
 doc.add_paragraph(data_to_write)
 
 # Write two lines of empty space
 doc.add_paragraph("\n" * 2)
 
-data_to_write = f"Over All Rating of all Reviews given = {overall_rating}\n also Given LAST {T_minus_days} interval Rating = {interval_rating} out {len(full_filtered[1])} given reviews\n"
+data_to_write = f"Over All Rating of all Reviews given = {overall_rating}\n also Given LAST {T_minus_days} interval Rating = {interval_rating} out {len(filtered_review(start_date_str,end_date_str))} given reviews\n"
 doc.add_paragraph(data_to_write)
 
 # Write two lines of empty space
 doc.add_paragraph("\n" * 2)
 
 
-data_to_write = f"Rating Avg. of Yesterday = {} also No of Rating give = {} n"
+data_to_write = f"Rating Avg. of Yesterday \n"
 doc.add_paragraph(data_to_write)
-
-
 
 # Write the DataFrame to the document in tabular form
-doc.add_paragraph("DataFrame:")
+doc.add_paragraph("Yesterday and day before Yesterday Rating Analysis:")
+yesterday=get_no_Of_ratingsYesterday_avgRating()
+table = doc.add_table(yesterday.shape[0]+1, yesterday.shape[1])
+for col_num, col_name in enumerate(yesterday.columns):
+    table.cell(0, col_num).text = col_name
+    for row_num in range(yesterday.shape[0]):
+        table.cell(row_num+1, col_num).text = str(yesterday.iloc[row_num, col_num])
+
+# Write two lines of empty space
+doc.add_paragraph("\n" * 2)
+
+#trend of last selected days DATA and LINE GRAPH
+
+# Write the DataFrame to the document in tabular form
+doc.add_paragraph(f"Trend of Last {T_minus_days} selected days ")
+xx=Trend_of_Tminus_days(T_minus_days)
+# Convert list of lists to DataFrame
+df_xx = pd.DataFrame(xx, columns=['avg daywise rating', 'Date'])
+df_xx = df_xx[['Date', 'avg daywise rating']]
 table = doc.add_table(df_xx.shape[0]+1, df_xx.shape[1])
 for col_num, col_name in enumerate(df_xx.columns):
     table.cell(0, col_num).text = col_name
@@ -292,30 +319,97 @@ for col_num, col_name in enumerate(df_xx.columns):
 
 
 
-# Write four lines of empty space
-doc.add_paragraph("\n" * 4)
+# Extract x and y values from the list
+x_values = [pair[1] for pair in xx]
+y_values = [pair[0] for pair in xx]
 
+# Plot the line plot
+plt.figure(figsize=(10, 5))
+plt.subplot(1, 2, 1)  # 1 row, 2 columns, subplot 1
+plt.plot(x_values, y_values, marker='o', linestyle='-', color='b')
+plt.xlabel('Date')
+plt.ylabel('Rating')
+plt.title(f'Trend line Analysis of LAST {T_minus_days} days Rating')
+plt.grid(True)
+
+# Save the plot below the previously added data
+plt.savefig(docx_file_path.replace('.docx', '_plot_trend.png'))
+
+# Close the plot to free up resources
+plt.close()
+
+# Add the plot to the Word document
+doc.add_picture(docx_file_path.replace('.docx', '_plot_trend.png'))
+
+
+# Write two lines of empty space
+doc.add_paragraph("\n" * 2)
+
+# Write net split data of overall and selected LAST no of days to the document
+doc.add_paragraph(f"Net Split Data of overall rating and selected {T_minus_days} no of days:\n\n")
+doc.add_paragraph(f"Net Split Data of overall rating \n\n")
 # Write net split data to the document
+net_split_data = net_split_of_all_reviews('all')
 doc.add_paragraph("Net Split Data:")
 for key, value in net_split_data.items():
     doc.add_paragraph(f"{key}: {value}")
 
+# Plotting
+plt.bar(net_split_data.keys(), net_split_data.values())
+plt.xlabel('Rating Score')
+plt.ylabel('Count')
+plt.title('Net Split of All Reviews Rating')
 
+# Save the plot below the previously added data
+plt.savefig(docx_file_path.replace('.docx', '_plot_netSplit.png'))
+
+# Close the plot to free up resources
+plt.close()
+
+# Add the plot to the Word document
+doc.add_picture(docx_file_path.replace('.docx', '_plot_netSplit.png'))
+
+# Write two lines of empty space
+doc.add_paragraph("\n" * 2)
+
+doc.add_paragraph(f"Net Split Data of LAST {T_minus_days} days rating \n\n")
+# Write net split data to the document
+net_split_data = net_split_of_all_reviews(T_minus_days)
+doc.add_paragraph("Net Split Data:")
+for key, value in net_split_data.items():
+    doc.add_paragraph(f"{key}: {value}")
 
 # Plotting
 plt.bar(net_split_data.keys(), net_split_data.values())
-plt.xlabel('Score')
+plt.xlabel('Rating Score')
 plt.ylabel('Count')
-plt.title('Net Split of All Reviews')
+plt.title(f'Net Split of LAST {T_minus_days} Reviews Rating')
+
+
 
 # Save the plot below the previously added data
-plt.savefig(docx_file_path.replace('.docx', '_plot.png'))
+plt.savefig(docx_file_path.replace('.docx', '_plot_selectedDaysSplit.png'))
+
+# Close the plot to free up resources
+plt.close()
 
 # Add the plot to the Word document
-doc.add_picture(docx_file_path.replace('.docx', '_plot.png'))
+doc.add_picture(docx_file_path.replace('.docx', '_plot_selectedDaysSplit.png'))
+
+
+# Write two lines of empty space
+doc.add_paragraph("\n" * 2)
+
+#
+
 
 # Save the Word document
 doc.save(docx_file_path)
+
+
+
+
+
 
 
 
@@ -465,5 +559,35 @@ for score in trend_line_data[0]:
 trend_line_data=Trend_of_Tminus_days(T_minus_days)
 
 
+# Write net split data of overall and selected LAST no of days to the document
+doc.add_paragraph(f"Net Split Data of overall rating and selected {T_minus_days} no of days:\n\n")
+doc.add_paragraph(f"Net Split Data of overall rating \n\n")
+# Write net split data to the document
+net_split_data = net_split_of_all_reviews('all')
+doc.add_paragraph("Net Split Data:")
+for key, value in net_split_data.items():
+    doc.add_paragraph(f"{key}: {value}")
+
+# Plotting
+plt.bar(net_split_data.keys(), net_split_data.values())
+plt.xlabel('Rating Score')
+plt.ylabel('Count')
+plt.title('Net Split of All Reviews Rating')
+
+# Save the plot below the previously added data
+plt.savefig(docx_file_path.replace('.docx', '_plot_netSplit.png'))
+
+# Close the plot to free up resources
+plt.close()
+
+plt.show()
+# Add the plot to the Word document
+doc.add_picture(docx_file_path.replace('.docx', '_plot_netSplit.png'))
+
+# Write two lines of empty space
+doc.add_paragraph("\n" * 2)
+
+# Save the Word document
+doc.save(docx_file_path)
 
 
