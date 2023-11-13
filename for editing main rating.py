@@ -83,8 +83,8 @@ def filtered_review(start_date_str,end_date_str):
     ]
     return filtered_reviews
 
-qqqq=filtered_review(start_date_str,end_date_str)
-
+#qqqq=filtered_review("2023-11-11","2023-11-12")
+total_review=full_review()
  
 ################################
 #calculation of overall rating and separate rating based on  datetime interval
@@ -247,7 +247,7 @@ def thumbs_count():
 
 def get_no_Of_ratingsYesterday_avgRating():
    
-    yesterdays=split_trendwise_wrt_previous_days(2)    
+    yesterdays=split_trendwise_wrt_previous_days(7)    
         
     # Calculate weighted average for each row across specified columns
     ratings_columns = ['1 Star Ratings', '2 Star Ratings', '3 Star Ratings', '4 Star Ratings', '5 Star Ratings']
@@ -258,6 +258,7 @@ def get_no_Of_ratingsYesterday_avgRating():
     return yesterdays
 
 def percent_split_change():
+    
     
     pass
 ###########################################################################
@@ -295,6 +296,7 @@ doc.add_paragraph(data_to_write)
 doc.add_paragraph("Yesterday and day before Yesterday Rating Analysis:")
 yesterday=get_no_Of_ratingsYesterday_avgRating()
 table = doc.add_table(yesterday.shape[0]+1, yesterday.shape[1])
+
 for col_num, col_name in enumerate(yesterday.columns):
     table.cell(0, col_num).text = col_name
     for row_num in range(yesterday.shape[0]):
@@ -400,11 +402,43 @@ doc.add_picture(docx_file_path.replace('.docx', '_plot_selectedDaysSplit.png'))
 # Write two lines of empty space
 doc.add_paragraph("\n" * 2)
 
-#
+#displaying all review details of last selected days
+
+# Write the DataFrame to the document in tabular form
+doc.add_paragraph(f"Displaying all the reviews of last {T_minus_days} Days along with all related details\n")
+end_date=get_current_datetime().strftime("%Y-%m-%d")
+start_date=(get_current_datetime() - timedelta(days=T_minus_days)).strftime("%Y-%m-%d")
+yesterday=filtered_review(start_date,end_date)
+yesterday=pd.DataFrame(yesterday)
+# Extract specific columns
+selected_columns = ['userName', 'at', 'content', 'score', 'thumbsUpCount', 'appVersion', 'replyContent']
+yesterday = yesterday[selected_columns]
+table = doc.add_table(yesterday.shape[0]+1, yesterday.shape[1])
+for col_num, col_name in enumerate(yesterday.columns):
+    table.cell(0, col_num).text = col_name
+    for row_num in range(yesterday.shape[0]):
+        table.cell(row_num+1, col_num).text = str(yesterday.iloc[row_num, col_num])
+
+# Write two lines of empty space
+doc.add_paragraph("\n" * 2)
+ 
 
 
 # Save the Word document
 doc.save(docx_file_path)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -465,6 +499,19 @@ plt.title('Net Split of All Reviews')
 
 # Save the plot below the previously added data
 plt.savefig(file_path.replace('.txt', '_plot.png'))
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -586,6 +633,7 @@ doc.add_picture(docx_file_path.replace('.docx', '_plot_netSplit.png'))
 
 # Write two lines of empty space
 doc.add_paragraph("\n" * 2)
+
 
 # Save the Word document
 doc.save(docx_file_path)
