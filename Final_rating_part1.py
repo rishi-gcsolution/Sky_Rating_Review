@@ -35,7 +35,7 @@ def get_app_rating(app_id):
     try:
         app_info = google_play_scraper.app(app_id)
         rating = app_info['score']
-        return rating
+        return round(rating,2)
     except Exception as e:
         print(f"Error: {e}")
 
@@ -86,7 +86,7 @@ def get_weighted_avg():
     weighted_average = (
         (latest_rows[ratings_columns] * [5,4,3,2,1]).sum(axis=1) / latest_rows['Total Rating']
     )
-    latest_rows['Weighted Average Rating'] = weighted_average
+    latest_rows['Weighted Average Rating'] = round(weighted_average,2)
     return latest_rows
 
 latest_rows=get_weighted_avg()
@@ -102,7 +102,7 @@ doc = Document()
 
 # Write the date to the document
 
-data_to_write = f"                       HDFC SKY ANDROID APP\n"
+data_to_write = "                       HDFC SKY ANDROID APP\n"
 doc.add_paragraph(data_to_write)
 
 data_to_write = f" {get_current_datetime().strftime('%Y-%m-%d')} -- Rating and Reviews\n"
@@ -125,7 +125,7 @@ for col_num, col_name in enumerate(df_Google_Ratings.columns):
 doc.add_paragraph("\n" * 2)
 
 
-data_to_write = f" Analysis from the csv file downloaded from google SKY Playstore\n"
+data_to_write = " Analysis from the csv file downloaded from google SKY Playstore\n"
 doc.add_paragraph(data_to_write)
 
 
