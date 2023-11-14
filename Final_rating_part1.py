@@ -6,6 +6,8 @@ Created on Mon Nov 13 20:14:26 2023
 """
 import google_play_scraper
 
+import urllib.request
+from bs4 import BeautifulSoup
 import os
 import pandas as pd
 import requests
@@ -14,6 +16,29 @@ from google_play_scraper import app, Sort, reviews
 from datetime import datetime,timedelta
 import matplotlib.pyplot as plt
 from docx import Document
+
+def get_rating_via_webGoogleapp(url):
+#Send a GET request to the URL
+    response = urllib.request.urlopen(url)
+
+   # Check if the request was successful (status code 200)
+    if response.getcode() == 200:
+        # Parse the HTML content of the page
+        soup = BeautifulSoup(response.read(), 'html.parser')
+        
+        # Extract and print text from all div elements with class "TT9eCd"
+        for row in soup.find_all('div', attrs={"class": "TT9eCd"}):
+            print(row.text)
+    
+        # Find the div element with itemprop="starRating" and class "TT9eCd"
+        rating_element = soup.find('div', class_='TT9eCd')
+        
+        # Check if the element is found
+        if rating_element:
+            # Extract the text content within the element
+            rating = rating_element.text.strip()
+            print("Rating:", rating)
+    return rating
 
 
 def get_current_datetime():
@@ -40,8 +65,8 @@ def get_app_rating(app_id):
         print(f"Error: {e}")
 
 # Option 2: Create a DataFrame from a dictionary
-data_dict = {'HDFC SKY': [get_app_rating('com.cloudtradetech.sky')],
-             'GROWW': [get_app_rating('com.nextbillion.groww')],
+data_dict = {'GROWW': [get_app_rating('com.nextbillion.groww')],
+             'HDFC SKY': [get_rating_via_webGoogleapp("https://play.google.com/store/apps/details?id=com.cloudtradetech.sky&hl=en_US")],
              'ZERODHA': [get_app_rating('com.zerodha.kite3')],
              'PAYTMMONEY': [get_app_rating('com.paytmmoney')],
              'ANGLE ONE': [get_app_rating('com.msf.angelmobile')],
