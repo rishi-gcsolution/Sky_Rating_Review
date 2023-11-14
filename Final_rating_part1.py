@@ -105,10 +105,10 @@ doc = Document()
 data_to_write = f"                       HDFC SKY ANDROID APP\n"
 doc.add_paragraph(data_to_write)
 
-data_to_write = f" {get_current_datetime()} -- Rating and Reviews\n"
+data_to_write = f" {get_current_datetime().strftime('%Y-%m-%d')} -- Rating and Reviews\n"
 doc.add_paragraph(data_to_write)
 
-data_to_write = f" Google Rating as of {get_current_datetime()}\n"
+data_to_write = f" Google Rating as of {get_current_datetime().strftime('%Y-%m-%d')}\n"
 doc.add_paragraph(data_to_write)
 
 # printing Google Rating Sections

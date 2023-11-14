@@ -84,7 +84,7 @@ def filtered_review(start_date_str,end_date_str):
     return filtered_reviews
 
 #qqqq=filtered_review("2023-11-11","2023-11-12")
-total_review=full_review()
+#total_review=full_review()
  
 ################################
 #calculation of overall rating and separate rating based on  datetime interval
@@ -139,7 +139,7 @@ def Trend_of_Tminus_days(T_minus_days):
     ]
     return lis       
     
-
+'''
 xx=Trend_of_Tminus_days(T_minus_days)
 # Convert list of lists to DataFrame
 df_xx = pd.DataFrame(xx, columns=['avg daywise rating', 'Date'])
@@ -171,7 +171,7 @@ plt.colorbar()
 plt.tight_layout()  # Adjust layout to prevent overlapping
 plt.show()
 
-
+'''
 
 #######################################################
 # Split based on total reviews given
@@ -196,14 +196,14 @@ def net_split_of_all_reviews(duration_of_T_minusDays):
             
 
 #net_split_data = net_split_of_all_reviews('all')
-
+'''
 # Plotting
 plt.bar(net_split_data.keys(), net_split_data.values())
 plt.xlabel('Score')
 plt.ylabel('Count')
 plt.title('Net Split of All Reviews')
 plt.show()
-           
+'''           
 #########################################################################
 #split trend wise with respect to previous days this function is giving no of 5star 4star 3star 2star 1star given perticular days
 ########################################################################
@@ -265,7 +265,7 @@ def percent_split_change():
 # saving to ms Word
 
 # Specify the file path for Word document
-docx_file_path = r"C:\Users\asus\Desktop\HDFC Work Related\document.docx"
+docx_file_path = r"C:\Users\asus\Desktop\HDFC Work Related\document_OnReviews.docx"
 
 
 # Create a Word document
@@ -273,16 +273,13 @@ doc = Document()
 
 # Write the date to the document
 
-data_to_write = f"                  REVIEW AND RATING ANALYSIS OF SKY\n"
+data_to_write = f"                  Ratings with Reviews of HDFC SKY\n"
 doc.add_paragraph(data_to_write)
 
 data_to_write = f" Date of Analysis = {get_current_datetime().strftime('%Y-%m-%d')}\n also LAST {T_minus_days}  analysis \n"
 doc.add_paragraph(data_to_write)
 
-# Write two lines of empty space
-doc.add_paragraph("\n" * 2)
-
-data_to_write = f"Over All Rating of all Reviews given = {overall_rating}\n also Given LAST {T_minus_days} interval Rating = {interval_rating} out {len(filtered_review(start_date_str,end_date_str))} given reviews\n"
+data_to_write = f"Over All Rating of all Reviews given = {round(overall_rating, 2)}\n also Given LAST {T_minus_days} interval Rating = {interval_rating} out {len(filtered_review(start_date_str,end_date_str))} given reviews\n"
 doc.add_paragraph(data_to_write)
 
 # Write two lines of empty space
@@ -303,7 +300,7 @@ for col_num, col_name in enumerate(yesterday.columns):
         table.cell(row_num+1, col_num).text = str(yesterday.iloc[row_num, col_num])
 
 # Write two lines of empty space
-doc.add_paragraph("\n" * 2)
+#doc.add_paragraph("\n" * 2)
 
 #trend of last selected days DATA and LINE GRAPH
 
@@ -332,7 +329,7 @@ plt.plot(x_values, y_values, marker='o', linestyle='-', color='b')
 plt.xlabel('Date')
 plt.ylabel('Rating')
 plt.title(f'Trend line Analysis of LAST {T_minus_days} days Rating')
-plt.grid(True)
+plt.grid(True) 
 
 # Save the plot below the previously added data
 plt.savefig(docx_file_path.replace('.docx', '_plot_trend.png'))
@@ -426,216 +423,3 @@ doc.add_paragraph("\n" * 2)
 
 # Save the Word document
 doc.save(docx_file_path)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#######################################################################
-# saving data in notepad
-
-
-file_path = r"C:\Users\asus\Desktop\HDFC Work Related\text.txt"
-data_to_write = f"Today's Date = {current_datetime.strftime('%Y-%m-%d')}\n"
-
-with open(file_path, "a") as file:
-    # Write data to the file
-    file.write(data_to_write)
-    
-data_to_write=f"\n\n\nOver All Rating = {overall_rating}\nand Given interval Rating = {interval_rating} \n\n\n "
-
-with open(file_path, "a") as file:
-    # Write data to the file
-    file.write(data_to_write)
-
-# Write four lines of empty space
-with open(file_path, "a") as file:
-    file.write("\n" * 4)
-
-# Write the DataFrame to the file in CSV format
-df_xx.to_csv(file_path, mode='a', index=False, sep='\t')
- 
-#writing net split to note pad
-# Write the dictionary data below the previously added data
-with open(file_path, "a") as file:
-    file.write("\writing net split Data:\n")
-    for key, value in net_split_data.items():
-        file.write(f"{key}: {value}\n")
-
-plt.bar(net_split_data.keys(), net_split_data.values())
-plt.xlabel('Score')
-plt.ylabel('Count')
-plt.title('Net Split of All Reviews')
-
-# Save the plot below the previously added data
-plt.savefig(file_path.replace('.txt', '_plot.png'))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-en the text file using the default text editor
-os.system(f'start {file_path}')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-with open(file_path, "a") as file:
-    # Write data to the file
-    file.write(data_to_write)
-
-# Write the DataFrame to a text file (CSV format)
-df_xx.to_csv(file_path, index=False, sep='\t')  # Use tab as a separator for better readability in Notepad
-
-#saving all the information on csv file
-
-
-
-
-# DataFrame 1
-data1 = {"Column1": [current_datetime]}
-df1 = pd.DataFrame(data1)
-
-# DataFrame 2
-data2 = {"Column2": [overall_rating,interval_rating]}
-df2 = pd.DataFrame(data2)
-
-# DataFrame 2
-data3 = {"Column3": [df_xx]}
-df3 = pd.DataFrame(data3)
-        
-
-# Concatenate DataFrames vertically
-result_df = pd.concat([df1, df2, df3], ignore_index=True)
-
-result_df.to_csv('output_dataframe.csv', index=False)
-
-
-    
-    if T_minus_days=='all':
-        rating_count_fun(full_filtered[0])
-    if isinstance(time_duration, int):   
-        rating_count_fun(full_filtered[1])
-    return "wrong inputed data"
-#########################################################################
-
-    
-    
-    
-
-for score in trend_line_data[0]:
-        lis.append(score['score'])
-        print(score['score'])
-          
-    
-    while T_minus_days>=1:
-        day_wise_reviews=[
-            [trend_line_data[0][0]['score'],trend_line_data[0][0]['at']]
-            for review in reviews_result
-            if start_date <= review['at'] <= end_date
-        ]
-        
-    
-    
-    return trend_line_data
-
-    
-trend_line_data=Trend_of_Tminus_days(T_minus_days)
-
-
-# Write net split data of overall and selected LAST no of days to the document
-doc.add_paragraph(f"Net Split Data of overall rating and selected {T_minus_days} no of days:\n\n")
-doc.add_paragraph(f"Net Split Data of overall rating \n\n")
-# Write net split data to the document
-net_split_data = net_split_of_all_reviews('all')
-doc.add_paragraph("Net Split Data:")
-for key, value in net_split_data.items():
-    doc.add_paragraph(f"{key}: {value}")
-
-# Plotting
-plt.bar(net_split_data.keys(), net_split_data.values())
-plt.xlabel('Rating Score')
-plt.ylabel('Count')
-plt.title('Net Split of All Reviews Rating')
-
-# Save the plot below the previously added data
-plt.savefig(docx_file_path.replace('.docx', '_plot_netSplit.png'))
-
-# Close the plot to free up resources
-plt.close()
-
-plt.show()
-# Add the plot to the Word document
-doc.add_picture(docx_file_path.replace('.docx', '_plot_netSplit.png'))
-
-# Write two lines of empty space
-doc.add_paragraph("\n" * 2)
-
-
-# Save the Word document
-doc.save(docx_file_path)
-
-
