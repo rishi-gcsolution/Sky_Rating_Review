@@ -151,14 +151,14 @@ doc.add_paragraph('Plotting both line graph and Bar graph of Breakup of Ratings'
 fig, ax1 = plt.subplots()
 
 # Bar graph (Total Rating)
-ax1.bar(latest_rows['Date'], latest_rows['Total Rating'], color='b', alpha=0.7, label='Total Rating')
+ax1.bar(latest_rows['Date'][::-1], latest_rows['Total Rating'][::-1], color='b', alpha=0.7, label='Total Rating')
 ax1.set_xlabel('Date')
 ax1.set_ylabel('Total Rating', color='b')
 ax1.tick_params('y', colors='b')
 
 # Create a second y-axis for the line graph
 ax2 = ax1.twinx()
-ax2.plot(latest_rows['Date'], latest_rows['Weighted Average Rating'], marker='o', linestyle='-', color='r', label='Weighted Average Rating')
+ax2.plot(latest_rows['Date'][::-1], latest_rows['Weighted Average Rating'][::-1], marker='o', linestyle='-', color='r', label='Weighted Average Rating')
 ax2.set_ylabel('Weighted Average Rating', color='r')
 ax2.tick_params('y', colors='r')
 

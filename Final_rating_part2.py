@@ -138,40 +138,6 @@ def Trend_of_Tminus_days(T_minus_days):
     for sublist in lis
     ]
     return lis       
-    
-'''
-xx=Trend_of_Tminus_days(T_minus_days)
-# Convert list of lists to DataFrame
-df_xx = pd.DataFrame(xx, columns=['avg daywise rating', 'Date'])
-df_xx = df_xx[['Date', 'avg daywise rating']]
-
-
-# Extract x and y values from the list
-x_values = [pair[1] for pair in xx]
-y_values = [pair[0] for pair in xx]
-
-# Plot the line plot
-plt.figure(figsize=(10, 5))
-plt.subplot(1, 2, 1)  # 1 row, 2 columns, subplot 1
-plt.plot(x_values, y_values, marker='o', linestyle='-', color='b')
-plt.xlabel('X-axis')
-plt.ylabel('Y-axis')
-plt.title('Line Plot: xx[0] on Y-axis and xx[1] on X-axis')
-plt.grid(True)
-
-# Create a histogram
-plt.subplot(1, 2, 2)  # 1 row, 2 columns, subplot 2
-plt.hist2d(x_values, y_values, bins=(10, 10), cmap=plt.cm.Blues)
-plt.xlabel('X Axis')
-plt.ylabel('Y Axis')
-plt.title('Histogram of X and Y values')
-plt.colorbar()
-
-# Show the plot
-plt.tight_layout()  # Adjust layout to prevent overlapping
-plt.show()
-
-'''
 
 #######################################################
 # Split based on total reviews given
@@ -194,16 +160,7 @@ def net_split_of_all_reviews(duration_of_T_minusDays):
     
     return net_split
             
-
-#net_split_data = net_split_of_all_reviews('all')
-'''
-# Plotting
-plt.bar(net_split_data.keys(), net_split_data.values())
-plt.xlabel('Score')
-plt.ylabel('Count')
-plt.title('Net Split of All Reviews')
-plt.show()
-'''           
+         
 #########################################################################
 #split trend wise with respect to previous days this function is giving no of 5star 4star 3star 2star 1star given perticular days
 ########################################################################
@@ -317,9 +274,17 @@ for col_num, col_name in enumerate(df_xx.columns):
 
 
 # Extract x and y values from the list
+#xx=xx[::-1]
 x_values = [pair[1] for pair in xx]
 y_values = [pair[0] for pair in xx]
 
+# Convert date strings to datetime objects
+date_objects = [datetime.strptime(date_str, '%Y-%m-%d') for date_str in x_values]
+
+# Format datetime objects to 'Mon Day' format
+x_values = [date_obj.strftime('%b %d') for date_obj in date_objects]
+x_values.pop(0)
+y_values.pop(0)
 # Plot the line plot
 plt.figure(figsize=(10, 5))
 plt.subplot(1, 2, 1)  # 1 row, 2 columns, subplot 1
