@@ -5,7 +5,6 @@ Created on Mon Nov 13 20:14:26 2023
 @author: asus
 """
 import google_play_scraper
-
 import urllib.request
 from bs4 import BeautifulSoup
 import os
@@ -19,26 +18,30 @@ from docx import Document
 
 def get_rating_via_webGoogleapp(url):
 #Send a GET request to the URL
-    response = urllib.request.urlopen(url)
-
-   # Check if the request was successful (status code 200)
-    if response.getcode() == 200:
-        # Parse the HTML content of the page
-        soup = BeautifulSoup(response.read(), 'html.parser')
-        
-        # Extract and print text from all div elements with class "TT9eCd"
-        for row in soup.find_all('div', attrs={"class": "TT9eCd"}):
-            print(row.text)
+    try:
+        response = urllib.request.urlopen(url)
     
-        # Find the div element with itemprop="starRating" and class "TT9eCd"
-        rating_element = soup.find('div', class_='TT9eCd')
+       # Check if the request was successful (status code 200)
+        if response.getcode() == 200:
+            # Parse the HTML content of the page
+            soup = BeautifulSoup(response.read(), 'html.parser')
+            
+            # Extract and print text from all div elements with class "TT9eCd"
+            for row in soup.find_all('div', attrs={"class": "TT9eCd"}):
+                print(row.text)
         
-        # Check if the element is found
-        if rating_element:
-            # Extract the text content within the element
-            rating = rating_element.text.strip()
-            print("Rating:", rating)
-    return rating
+            # Find the div element with itemprop="starRating" and class "TT9eCd"
+            rating_element = soup.find('div', class_='TT9eCd')
+            
+            # Check if the element is found
+            if rating_element:
+                # Extract the text content within the element
+                rating = rating_element.text.strip()
+                print("Rating:", rating)
+        return rating
+    except Exception as e:
+        print(f"Error during web scraping: {e}")
+        return None
 
 
 def get_current_datetime():
@@ -71,11 +74,10 @@ data_dict = {'GROWW': [get_app_rating('com.nextbillion.groww')],
              'PAYTMMONEY': [get_app_rating('com.paytmmoney')],
              'ANGLE ONE': [get_app_rating('com.msf.angelmobile')],
              'DHAN': [get_app_rating('com.dhan.live')],
-             'HDFC INVESTRIGHT': [get_app_rating('com.hsl.investright')]
+             'HDFC INVESTRIGHT': [get_app_rating('com.hsl.investright')],
+             'UPSTOX': [get_app_rating('in.upstox.app')]
              }
 df_Google_Ratings = pd.DataFrame(data_dict)
-
-
 
 #Replace 'your_file.csv' with the actual file path
 file_path_csv = r'C:\Users\asus\Desktop\HDFC Work Related\excel_files\Daily rating distribution _ 2023-10-15 - 2023-11-11.csv'

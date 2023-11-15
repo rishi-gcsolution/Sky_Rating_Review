@@ -54,34 +54,43 @@ def get_current_datetime():
         print(f"Error fetching current datetime: {e}")
         return None
    
+def full_review(app_id=app_id, language=language, country=country):
+    try:
+        # Fetch the reviews sorted by date in descending order
+        reviews_result, _ = reviews(
+            app_id,
+            lang=language,
+            country=country,
+            sort=Sort.NEWEST,
+            count=10000,  # Number of reviews to retrieve (adjust as needed)
+        )
+        return reviews_result
+    except Exception as e:
+        print(f"Error fetching reviews: {e}")
+        return None
+def filtered_review(start_date_str, end_date_str, app_id=app_id, language=language, country=country):
+    try:
+        reviews_result = full_review(app_id, language, country=country)
+        
+        if reviews_result is None:
+            # Handle the case where an error occurred during fetching reviews
+            print("Unable to fetch reviews.")
+            return None
 
-def full_review():
-    
-    
-    # Fetch the reviews sorted by date in descending order
-    reviews_result, _ = reviews(
-        app_id,
-        lang=language,
-        country=country,
-        sort=Sort.NEWEST,
-        count=10000,  # Number of reviews to retrieve (adjust as needed)
-    )
-    return reviews_result
-    
-def filtered_review(start_date_str,end_date_str):
-    reviews_result=full_review()
-    
-    #Convert start and end dates to datetime objects
-    start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
-    end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
-    
-    # Filter reviews based on date range given as start date and end date
-    filtered_reviews = [
-        review
-        for review in reviews_result
-        if start_date <= review['at'] <= end_date
-    ]
-    return filtered_reviews
+        # Convert start and end dates to datetime objects
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
+
+        # Filter reviews based on date range given as start date and end date
+        filtered_reviews = [
+            review
+            for review in reviews_result
+            if start_date <= review['at'] <= end_date
+        ]
+        return filtered_reviews
+    except Exception as e:
+        print(f"Error filtering reviews: {e}")
+        return None
 
 #qqqq=filtered_review("2023-11-11","2023-11-12")
 #total_review=full_review()
@@ -112,32 +121,37 @@ interval_rating = sum([
 
 #######################################################################################################
 
+def Trend_of_Tminus_days(T_minus_days, app_id=app_id, language=language, country=country):
+    try:
+        lis = []
+        current_datetime = get_current_datetime()
+        
+        if current_datetime is None:
+            # Handle the case where an error occurred during fetching current datetime
+            print("Unable to fetch current datetime.")
+            return None
+        
+        def scoreSum_and_date(required_date):
+            day_reviews = full_review(app_id, language, country)
+            day_sum = [score['score'] for score in day_reviews
+                       if score['at'].strftime("%Y-%m-%d") == required_date
+                       ]
+            return [sum(day_sum), required_date, len(day_sum)]
 
-def Trend_of_Tminus_days(T_minus_days):
-    
-    
-    #today_date=get_current_datetime().strftime("%Y-%m-%d")
-    #end_date=(get_current_datetime() - timedelta(days=T_minus_days)).strftime("%Y-%m-%d")
-    #full_filtered_review() takes string type date 
-    #trend_line_data=full_filtered_review(end_date,today_date)
-    lis=[]
-    required_date=(get_current_datetime() - timedelta(days=T_minus_days)).strftime("%Y-%m-%d")
-    def scoreSum_and_date(required_date):
-        
-        day_sum=[score['score'] for score in full_review()
-                 if score['at'].strftime("%Y-%m-%d")==required_date
-                 ]
-        return [sum(day_sum),required_date,len(day_sum)]
-        
-    while T_minus_days>0:
-        required_date=(get_current_datetime() - timedelta(days=T_minus_days)).strftime("%Y-%m-%d")
-        lis.append(scoreSum_and_date(required_date))
-        T_minus_days-=1
-    lis = [
-    [round(sublist[0] / sublist[2],2),sublist[1]] if sublist[2] != 0 else [0,sublist[1]]
-    for sublist in lis
-    ]
-    return lis       
+        while T_minus_days > 0:
+            required_date = (current_datetime - timedelta(days=T_minus_days)).strftime("%Y-%m-%d")
+            lis.append(scoreSum_and_date(required_date))
+            T_minus_days -= 1
+
+        lis = [
+            [round(sublist[0] / sublist[2], 2), sublist[1]] if sublist[2] != 0 else [0, sublist[1]]
+            for sublist in lis
+        ]
+
+        return lis
+    except Exception as e:
+        print(f"Error in Trend_of_Tminus_days: {e}")
+        return None
 
 #######################################################
 # Split based on total reviews given
@@ -164,57 +178,71 @@ def net_split_of_all_reviews(duration_of_T_minusDays):
 #########################################################################
 #split trend wise with respect to previous days this function is giving no of 5star 4star 3star 2star 1star given perticular days
 ########################################################################
+def split_trendwise_wrt_previous_days(duration_of_T_minusDays, app_id=app_id, language=language, country=country):
+    try:
+        rating_count = 0
+        
+        def rating_count_fun(data_input):
+            # Create a DataFrame
+            df = pd.DataFrame(data_input)
+            # Converting datetime to string of format yyyy-mm-dd
+            df['at'] = df['at'].dt.strftime("%Y-%m-%d")
+            
+            # Count the number of ratings for each score on each day
+            rating_counts = df.groupby(['at', 'score']).size().unstack(fill_value=0)
+            
+            # Rename columns for clarity
+            rating_counts.columns = [f'{col} Star Ratings' for col in rating_counts.columns]
+            
+            # Add a column for Total Ratings
+            rating_counts['Total Ratings'] = rating_counts.sum(axis=1)
+            
+            # Reset the index for a clean DataFrame
+            rating_counts.reset_index(inplace=True)
+            
+            return rating_counts
 
-def split_trendwise_wrt_previous_days(duration_of_T_minusDays):
-    rating_count=0
-    def rating_count_fun(data_input):
-        #data_input=full_filtered[0]
-        # Create a DataFrame
-        df = pd.DataFrame(data_input)
-        #converting datetime to string of format yyyy-mm-dd
-        df['at'] = df['at'].dt.strftime("%Y-%m-%d")
-       
-            
-        # Count the number of ratings for each score on each day
-        rating_counts = df.groupby(['at', 'score']).size().unstack(fill_value=0)
-            
-        # Rename columns for clarity
-        rating_counts.columns = [f'{col} Star Ratings' for col in rating_counts.columns]
-            
-        # Add a column for Total Ratings
-        rating_counts['Total Ratings'] = rating_counts.sum(axis=1)
-        
-        # Reset the index for a clean DataFrame
-        rating_counts.reset_index(inplace=True)
-        
-        return rating_counts
-    
-    if duration_of_T_minusDays=="all":
-        rating_count=rating_count_fun(full_review())
-    if isinstance(duration_of_T_minusDays, int):
-        end_date=get_current_datetime().strftime("%Y-%m-%d")
-        start_date=(get_current_datetime() - timedelta(days=duration_of_T_minusDays)).strftime("%Y-%m-%d")
-        rating_count=rating_count_fun(filtered_review(start_date,end_date))
-    return rating_count
+        if duration_of_T_minusDays == "all":
+            rating_count = rating_count_fun(full_review(app_id, language, country))
+        elif isinstance(duration_of_T_minusDays, int):
+            end_date = get_current_datetime().strftime("%Y-%m-%d")
+            start_date = (get_current_datetime() - timedelta(days=duration_of_T_minusDays)).strftime("%Y-%m-%d")
+            rating_count = rating_count_fun(filtered_review(start_date, end_date, app_id, language, country))
+        else:
+            print("Invalid duration_of_T_minusDays. It should be 'all' or an integer.")
+            return None
+
+        return rating_count
+
+    except Exception as e:
+        print(f"Error in split_trendwise_wrt_previous_days: {e}")
+        return None
     
 
     
 def thumbs_count():
     pass
+def get_no_Of_ratingsYesterday_avgRating(T_minus_days, app_id=app_id, language=language, country=country):
+    try:
+        yesterdays = split_trendwise_wrt_previous_days(T_minus_days, app_id, language, country)
 
-def get_no_Of_ratingsYesterday_avgRating():
-   
-    yesterdays=split_trendwise_wrt_previous_days(T_minus_days)    
-        
-    # Calculate weighted average for each row across specified columns
-    ratings_columns = ['1 Star Ratings', '2 Star Ratings', '3 Star Ratings', '4 Star Ratings', '5 Star Ratings']
-    weighted_average = (
-        (yesterdays[ratings_columns] * [1, 2, 3, 4, 5]).sum(axis=1) / yesterdays['Total Ratings']
-    )
-    yesterdays['Weighted Average Rating'] = round(weighted_average, 2)
-    
-    return yesterdays
+        if yesterdays is None:
+            # Handle the case where an error occurred during trendwise rating count calculation
+            print("Unable to fetch yesterday's ratings.")
+            return None
 
+        # Calculate weighted average for each row across specified columns
+        ratings_columns = ['1 Star Ratings', '2 Star Ratings', '3 Star Ratings', '4 Star Ratings', '5 Star Ratings']
+        weighted_average = (
+            (yesterdays[ratings_columns] * [1, 2, 3, 4, 5]).sum(axis=1) / yesterdays['Total Ratings']
+        )
+        yesterdays['Weighted Average Rating'] = round(weighted_average, 2)
+
+        return yesterdays
+
+    except Exception as e:
+        print(f"Error in get_no_Of_ratingsYesterday_avgRating: {e}")
+        return None
 def percent_split_change():
     
     
@@ -246,7 +274,7 @@ doc.add_paragraph(data_to_write)
 
 # Write the DataFrame to the document in tabular form
 doc.add_paragraph(f"Rating Split Analysis of Last {T_minus_days} days:")
-yesterday=get_no_Of_ratingsYesterday_avgRating()
+yesterday=get_no_Of_ratingsYesterday_avgRating(T_minus_days)
 table = doc.add_table(yesterday.shape[0]+1, yesterday.shape[1])
 
 for col_num, col_name in enumerate(yesterday.columns):
