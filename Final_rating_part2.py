@@ -19,6 +19,7 @@ from google_play_scraper import app, Sort, reviews
 from datetime import datetime,timedelta
 import matplotlib.pyplot as plt
 from docx import Document
+from docx.shared import Pt
 
 # Replace 'com.cloudtradetech.sky' with the package name of the app you want to scrape.
 app_id = 'com.cloudtradetech.sky'
@@ -258,12 +259,24 @@ docx_file_path = r"C:\Users\asus\Desktop\HDFC Work Related\document_OnReviews.do
 doc = Document()
 
 # Write the date to the document
-
 data_to_write = "                  Ratings with Reviews of HDFC SKY\n"
-doc.add_paragraph(data_to_write)
+paragraph = doc.add_paragraph()
 
-data_to_write = f" Date of Analysis = {get_current_datetime().strftime('%Y-%m-%d')}\n also LAST {T_minus_days} days analysis \n"
-doc.add_paragraph(data_to_write)
+# Add runs for different parts of the string
+paragraph.add_run(data_to_write[:data_to_write.find("Reviews")])  # Non-bold part
+run_reviews = paragraph.add_run("Reviews")
+run_reviews.bold = True  # Bold part
+paragraph.add_run(data_to_write[data_to_write.find("Reviews") + len("Reviews"):])  # Non-bold part
+
+
+
+date_analysis = get_current_datetime().strftime('%Y-%m-%d')
+T_minus_days = 7  # Replace with your desired value
+data_to_write = f" Date of Analysis = {date_analysis}\n also LAST {T_minus_days} days analysis \n"
+
+# Add a paragraph to the document
+doc.add_paragraph()
+    
 
 data_to_write = f"Over All Rating of all Reviews given = {round(overall_rating, 2)}\n also Given LAST {T_minus_days} Days Rating = {interval_rating} Stars out of {len(filtered_review(start_date_str,end_date_str))} given reviews\n"
 doc.add_paragraph(data_to_write)

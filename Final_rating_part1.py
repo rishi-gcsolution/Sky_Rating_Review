@@ -16,6 +16,10 @@ from datetime import datetime,timedelta
 import matplotlib.pyplot as plt
 from docx import Document
 
+
+# Extract the latest x_days of data for each column
+x_days=5
+
 def get_rating_via_webGoogleapp(url):
 #Send a GET request to the URL
     try:
@@ -68,14 +72,14 @@ def get_app_rating(app_id):
         print(f"Error: {e}")
 
 # Option 2: Create a DataFrame from a dictionary
-data_dict = {'GROWW': [get_app_rating('com.nextbillion.groww')],
-             'HDFC SKY': [get_rating_via_webGoogleapp("https://play.google.com/store/apps/details?id=com.cloudtradetech.sky&hl=en_US")],
-             'ZERODHA': [get_app_rating('com.zerodha.kite3')],
-             'PAYTMMONEY': [get_app_rating('com.paytmmoney')],
-             'ANGLE ONE': [get_app_rating('com.msf.angelmobile')],
-             'DHAN': [get_app_rating('com.dhan.live')],
-             'HDFC INVESTRIGHT': [get_app_rating('com.hsl.investright')],
-             'UPSTOX': [get_app_rating('in.upstox.app')]
+data_dict = { 'HDFC SKY': [get_rating_via_webGoogleapp("https://play.google.com/store/apps/details?id=com.cloudtradetech.sky&hl=en_US")[:-4]],
+              'HDFC INVESTRIGHT': [get_app_rating('com.hsl.investright')],
+              'GROWW': [get_app_rating('com.nextbillion.groww')],
+              'ZERODHA': [get_app_rating('com.zerodha.kite3')],
+              'PAYTMMONEY': [get_app_rating('com.paytmmoney')],
+              'ANGLE ONE': [get_app_rating('com.msf.angelmobile')],
+              'DHAN': [get_app_rating('com.dhan.live')],
+              'UPSTOX': [get_app_rating('in.upstox.app')]
              }
 df_Google_Ratings = pd.DataFrame(data_dict)
 
@@ -92,9 +96,6 @@ total_rating_sum = df_csv['Total Rating'].sum()
 
 # Breakup of Ratings of LAST 5 DAYS 
 
-# Extract the latest x_days of data for each column
-x_days=7
-
 
 # Convert the 'Date' column to datetime
 df_csv['Date'] = pd.to_datetime(df_csv['Date'])
@@ -104,6 +105,8 @@ df_csv_sorted = df_csv.sort_values(by='Date', ascending=False)
 
 # Filter the latest x rows
 latest_rows = df_csv_sorted.head(x_days)
+
+
 
 
 def get_weighted_avg():
@@ -118,6 +121,19 @@ def get_weighted_avg():
 
 latest_rows=get_weighted_avg()
 latest_rows['Date'] = latest_rows['Date'].dt.strftime('%b %d')
+#resetting the index
+latest_rows=latest_rows.reset_index(drop=True)
+
+# Drop a certain column by name
+column_to_drop = 'Notes'
+latest_rows = latest_rows.drop(column_to_drop, axis=1)
+#changing the column order
+# Specify the desired column order
+desired_columns = ['Date', 'Total Rating', '5 stars', '4 stars', '3 stars', '2 stars', '1 star', 'Weighted Average Rating']
+
+# Create a new DataFrame with the reordered columns
+latest_rows = latest_rows[desired_columns]
+
 #######################################
 # Create a Word document
 
@@ -132,10 +148,10 @@ doc = Document()
 data_to_write = "                       HDFC SKY ANDROID APP\n"
 doc.add_paragraph(data_to_write)
 
-data_to_write = f" {get_current_datetime().strftime('%Y-%m-%d')} -- Rating and Reviews\n"
+data_to_write = f" {get_current_datetime().strftime('%dth %b')} -- Rating and Reviews\n"
 doc.add_paragraph(data_to_write)
 
-data_to_write = f" Google Rating as of {get_current_datetime().strftime('%Y-%m-%d')}\n"
+data_to_write = f" Google Rating as of {get_current_datetime().strftime('%dth %b')}\n"
 doc.add_paragraph(data_to_write)
 
 # printing Google Rating Sections
@@ -152,16 +168,12 @@ for col_num, col_name in enumerate(df_Google_Ratings.columns):
 doc.add_paragraph("\n" * 2)
 
 
-data_to_write = " Analysis from the csv file downloaded from google SKY Playstore\n"
-doc.add_paragraph(data_to_write)
-
-
-data_to_write = f" total no of rating based on csv Extract = {total_rating_sum}\n"
+data_to_write = f" Total no of rating on {latest_rows.loc[0, 'Date']} is {latest_rows.loc[0, 'Total Rating']} at an average of {latest_rows.loc[0, 'Weighted Average Rating']}"
 doc.add_paragraph(data_to_write)
 
 
 # Write the DataFrame to the document in tabular form
-doc.add_paragraph(f"Break up of ratings of {x_days} days in year 2023")
+doc.add_paragraph(f"Break up of ratings of {x_days} days")
 
 table = doc.add_table(latest_rows.shape[0]+1, latest_rows.shape[1])
 
@@ -174,18 +186,33 @@ for col_num, col_name in enumerate(latest_rows.columns):
 doc.add_paragraph("\n" * 2)
 
 doc.add_paragraph('Plotting both line graph and Bar graph of Breakup of Ratings')
-# Plotting both line graph and bar graph on the same plot
+
+
+# Plotting both line graph and bar graph on the same plot# Plotting both line graph and bar graph on the same plot
 fig, ax1 = plt.subplots()
 
 # Bar graph (Total Rating)
-ax1.bar(latest_rows['Date'][::-1], latest_rows['Total Rating'][::-1], color='b', alpha=0.7, label='Total Rating')
+bar_plot = ax1.bar(latest_rows['Date'][::-1], latest_rows['Total Rating'][::-1], color='b', alpha=0.7, label='Total Rating')
+
+# Display values at points on the bar graph
+for bar, value in zip(bar_plot, latest_rows['Total Rating'][::-1]):
+    height = bar.get_height()
+    ax1.text(bar.get_x() + bar.get_width() / 2, height, value, ha='center', va='bottom', color='black')
+
 ax1.set_xlabel('Date')
 ax1.set_ylabel('Total Rating', color='b')
 ax1.tick_params('y', colors='b')
 
 # Create a second y-axis for the line graph
 ax2 = ax1.twinx()
-ax2.plot(latest_rows['Date'][::-1], latest_rows['Weighted Average Rating'][::-1], marker='o', linestyle='-', color='r', label='Weighted Average Rating')
+
+# Line graph (Weighted Average Rating)
+line_plot = ax2.plot(latest_rows['Date'][::-1], latest_rows['Weighted Average Rating'][::-1], marker='o', linestyle='-', color='r', label='Weighted Average Rating')
+
+# Display values at points on the line graph
+for point, value in zip(line_plot[0].get_data()[0], latest_rows['Weighted Average Rating'][::-1]):
+    ax2.text(point, value, value, ha='right', va='bottom', color='black')
+
 ax2.set_ylabel('Weighted Average Rating', color='r')
 ax2.tick_params('y', colors='r')
 
