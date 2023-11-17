@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Fri Nov 17 10:35:18 2023
+
+@author: asus
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Fri Nov 10 17:28:44 2023
 
 @author: asus
@@ -16,7 +23,7 @@ import pandas as pd
 import requests
 from datetime import datetime
 from google_play_scraper import app, Sort, reviews
-from datetime import datetime,timedelta
+from datetime import datetime,timedelta, timezone
 import matplotlib.pyplot as plt
 from docx import Document
 from docx.shared import Pt
@@ -32,7 +39,7 @@ country = 'in'
 # Specify start and end dates for filtering format date= yyyy-mm-dd
 start_date_str = "2023-11-01"  # Replace with your desired start date
 end_date_str = "2023-11-03"  # Replace with your desired end date
-T_minus_days=10
+T_minus_days=5
 
 ##################################
 # Current datetime module
@@ -69,7 +76,8 @@ def full_review(app_id=app_id, language=language, country=country):
     except Exception as e:
         print(f"Error fetching reviews: {e}")
         return None
-def filtered_review(start_date_str, end_date_str, app_id=app_id, language=language, country=country):
+
+def filtered_review(T_minus_days=T_minus_days, app_id=app_id, language=language, country=country):
     try:
         reviews_result = full_review(app_id, language, country=country)
         
@@ -79,14 +87,18 @@ def filtered_review(start_date_str, end_date_str, app_id=app_id, language=langua
             return None
 
         # Convert start and end dates to datetime objects
-        start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
-        end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
+        current_datetime = get_current_datetime()
+        start_date = current_datetime - timedelta(days=T_minus_days)
+        end_date = current_datetime.replace(tzinfo=timezone.utc)
+
+        # Make start_date offset-aware by adding timezone information
+        start_date = start_date.replace(tzinfo=timezone.utc)
 
         # Filter reviews based on date range given as start date and end date
         filtered_reviews = [
             review
             for review in reviews_result
-            if start_date <= review['at'] <= end_date
+            if start_date <= review['at'].replace(tzinfo=timezone.utc) <= end_date
         ]
         return filtered_reviews
     except Exception as e:
@@ -108,7 +120,7 @@ overall_rating=overall_rating/len(full_review())
 
 interval_rating = sum([
     review['score']
-    for review in filtered_review(start_date_str,end_date_str)])/len(filtered_review(start_date_str,end_date_str))
+    for review in filtered_review(T_minus_days)])/len(filtered_review(T_minus_days))
 
 
 
@@ -167,10 +179,10 @@ def net_split_of_all_reviews(duration_of_T_minusDays):
             
     if isinstance(duration_of_T_minusDays, int):
         
-        end_date=get_current_datetime().strftime("%Y-%m-%d")
-        start_date=(get_current_datetime() - timedelta(days=duration_of_T_minusDays)).strftime("%Y-%m-%d")
+        #end_date=get_current_datetime().strftime("%Y-%m-%d")
+        #start_date=(get_current_datetime() - timedelta(days=duration_of_T_minusDays)).strftime("%Y-%m-%d")
                 
-        for score in filtered_review(start_date,end_date):
+        for score in filtered_review(T_minus_days):
             net_split[str(score['score'])]+=1
     
     return net_split
@@ -206,9 +218,9 @@ def split_trendwise_wrt_previous_days(duration_of_T_minusDays, app_id=app_id, la
         if duration_of_T_minusDays == "all":
             rating_count = rating_count_fun(full_review(app_id, language, country))
         elif isinstance(duration_of_T_minusDays, int):
-            end_date = get_current_datetime().strftime("%Y-%m-%d")
-            start_date = (get_current_datetime() - timedelta(days=duration_of_T_minusDays)).strftime("%Y-%m-%d")
-            rating_count = rating_count_fun(filtered_review(start_date, end_date, app_id, language, country))
+            #end_date = get_current_datetime().strftime("%Y-%m-%d")
+            #start_date = (get_current_datetime() - timedelta(days=duration_of_T_minusDays)).strftime("%Y-%m-%d")
+            rating_count = rating_count_fun(filtered_review(T_minus_days))
         else:
             print("Invalid duration_of_T_minusDays. It should be 'all' or an integer.")
             return None
@@ -271,14 +283,14 @@ paragraph.add_run(data_to_write[data_to_write.find("Reviews") + len("Reviews"):]
 
 
 date_analysis = get_current_datetime().strftime('%Y-%m-%d')
-T_minus_days = 7  # Replace with your desired value
+#T_minus_days = 7  # Replace with your desired value
 data_to_write = f" Date of Analysis = {date_analysis}\n also LAST {T_minus_days} days analysis \n"
 
 # Add a paragraph to the document
 doc.add_paragraph()
     
 
-data_to_write = f"Over All Rating of all Reviews given = {round(overall_rating, 2)}\n also Given LAST {T_minus_days} Days Rating = {interval_rating} Stars out of {len(filtered_review(start_date_str,end_date_str))} given reviews\n"
+data_to_write = f"Over All Rating of all Reviews given = {round(overall_rating, 2)}\n also Given LAST {T_minus_days} Days Rating = {round(interval_rating,2)} Stars out of {len(filtered_review(T_minus_days))} given reviews\n"
 doc.add_paragraph(data_to_write)
 
 
@@ -322,29 +334,6 @@ y_values = [pair[0] for pair in xx]
 # Convert date strings to datetime objects
 date_objects = [datetime.strptime(date_str, '%Y-%m-%d') for date_str in x_values]
 
-# Format datetime objects to 'Mon Day' format
-x_values = [date_obj.strftime('%b %d') for date_obj in date_objects]
-x_values.pop(0)
-y_values.pop(0)
-# Plot the line plot
-plt.figure(figsize=(10, 5))
-plt.subplot(1, 2, 1)  # 1 row, 2 columns, subplot 1
-plt.plot(x_values, y_values, marker='o', linestyle='-', color='b')
-plt.xlabel('Date')
-plt.ylabel('Rating')
-plt.title(f'Rating Trend line Analysis of LAST {T_minus_days} days')
-plt.grid(True) 
-
-# Save the plot below the previously added data
-plt.savefig(docx_file_path.replace('.docx', '_plot_trend.png'))
-
-# Close the plot to free up resources
-plt.close()
-
-# Add the plot to the Word document
-doc.add_picture(docx_file_path.replace('.docx', '_plot_trend.png'))
-
-
 # Write two lines of empty space
 #doc.add_paragraph("\n" * 2)
 
@@ -364,7 +353,7 @@ plt.ylabel('Count')
 plt.title('Net Rating Distribution based on All reviews given')
 
 # Save the plot below the previously added data
-plt.savefig(docx_file_path.replace('.docx', '_plot_netSplit.png'))
+plt.savefig(docx_file_path.replace('.docx', '_plot_netSplit.png'), dpi=50)
 
 # Close the plot to free up resources
 plt.close()
@@ -375,29 +364,56 @@ doc.add_picture(docx_file_path.replace('.docx', '_plot_netSplit.png'))
 # Write two lines of empty space
 doc.add_paragraph("\n" * 1)
 
-doc.add_paragraph(f"Rating Distribution based on selected Last {T_minus_days} days\n")
-# Write net split data to the document
-net_split_data = net_split_of_all_reviews(T_minus_days)
-doc.add_paragraph("Net Split Data:")
-for key, value in net_split_data.items():
-    doc.add_paragraph(f"{key}: {value}")
 
-# Plotting
+# Assuming xx is a list of pairs [(rating, date_str), ...]
+x_values = [pair[1] for pair in xx]
+y_values = [pair[0] for pair in xx]
+
+# Convert date strings to datetime objects
+date_objects = [datetime.strptime(date_str, '%Y-%m-%d') for date_str in x_values]
+
+# Format datetime objects to 'Mon Day' format
+x_values = [date_obj.strftime('%b %d') for date_obj in date_objects]
+
+# Plot the line plot
+plt.figure(figsize=(7,4))
+
+# Subplot 1: Rating Trend line Analysis
+plt.subplot(1, 2, 1)
+plt.plot(x_values, y_values, marker='o', linestyle='-', color='b')
+plt.xlabel('Date')
+plt.ylabel('Rating')
+plt.title(f'Trend line of LAST {T_minus_days} days')
+plt.grid(True)
+
+
+# Display values on the line plot
+for i, txt in enumerate(y_values):
+    plt.annotate(txt, (x_values[i], y_values[i]))
+
+# Subplot 2: Rating Distribution based on selected Last {T_minus_days} days
+plt.subplot(1, 2, 2)
+
+# Assuming net_split_data is a dictionary with rating scores as keys and counts as values
 plt.bar(net_split_data.keys(), net_split_data.values())
 plt.xlabel('Rating Score')
 plt.ylabel('Count')
-plt.title(f'Rating Distribution based on selected Last {T_minus_days} days')
+plt.title(f'Rating Distribution of {T_minus_days} days')
+
+# Display values on the bar plot
+for key, value in net_split_data.items():
+    plt.text(key, value, str(value), ha='center', va='bottom')
+    
 
 
-
-# Save the plot below the previously added data
-plt.savefig(docx_file_path.replace('.docx', '_plot_selectedDaysSplit.png'))
+# Save the combined plot
+plt.savefig(docx_file_path.replace('.docx', '_combined_plots.png'))
 
 # Close the plot to free up resources
 plt.close()
 
-# Add the plot to the Word document
-doc.add_picture(docx_file_path.replace('.docx', '_plot_selectedDaysSplit.png'))
+# Add the combined plot to the Word document
+doc.add_picture(docx_file_path.replace('.docx', '_combined_plots.png'))
 
 
 # Write two lines of empty space
@@ -409,11 +425,24 @@ doc.add_paragraph("\n" * 1)
 doc.add_paragraph(f"Displaying all the reviews of last {T_minus_days} Days along with all related details\n")
 end_date=get_current_datetime().strftime("%Y-%m-%d")
 start_date=(get_current_datetime() - timedelta(days=T_minus_days)).strftime("%Y-%m-%d")
-yesterday=filtered_review(start_date,end_date)
+yesterday=filtered_review(T_minus_days)
 yesterday=pd.DataFrame(yesterday)
 # Extract specific columns
 selected_columns = ['userName', 'content', 'at', 'score', 'thumbsUpCount', 'appVersion', 'replyContent']
 yesterday = yesterday[selected_columns]
+# Rename the 'A' column to 'X'
+yesterday.rename(columns={'userName': 'Name'}, inplace=True)
+yesterday.rename(columns={'content': 'Review'}, inplace=True)
+yesterday.rename(columns={'score': 'Rating'}, inplace=True)
+
+# Convert 'at' column to datetime object
+yesterday['at'] = pd.to_datetime(yesterday['at'])
+
+# Format 'at' column without seconds
+yesterday['at'] = yesterday['at'].dt.strftime('%Y-%m-%d %H:%M')
+
+
+
 table = doc.add_table(yesterday.shape[0]+1, yesterday.shape[1])
 for col_num, col_name in enumerate(yesterday.columns):
     table.cell(0, col_num).text = col_name
@@ -422,7 +451,7 @@ for col_num, col_name in enumerate(yesterday.columns):
 
 # Write two lines of empty space
 doc.add_paragraph("\n" * 1)
- 
+
 
 
 # Save the Word document
