@@ -4,6 +4,8 @@ Created on Mon Nov 13 20:14:26 2023
 
 @author: asus
 """
+
+
 import google_play_scraper
 import urllib.request
 from bs4 import BeautifulSoup
@@ -183,7 +185,7 @@ for col_num, col_name in enumerate(latest_rows.columns):
         table.cell(row_num+1, col_num).text = str(latest_rows.iloc[row_num, col_num])
 
 # Write two lines of empty space
-doc.add_paragraph("\n" * 2)
+doc.add_paragraph("\n" * 11)
 
 doc.add_paragraph('Plotting both line graph and Bar graph of Breakup of Ratings')
 
