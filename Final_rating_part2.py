@@ -220,7 +220,7 @@ def split_trendwise_wrt_previous_days(duration_of_T_minusDays, app_id=app_id, la
         elif isinstance(duration_of_T_minusDays, int):
             #end_date = get_current_datetime().strftime("%Y-%m-%d")
             #start_date = (get_current_datetime() - timedelta(days=duration_of_T_minusDays)).strftime("%Y-%m-%d")
-            rating_count = rating_count_fun(filtered_review(T_minus_days))
+            rating_count = rating_count_fun(filtered_review(duration_of_T_minusDays))
         else:
             print("Invalid duration_of_T_minusDays. It should be 'all' or an integer.")
             return None
@@ -235,17 +235,24 @@ def split_trendwise_wrt_previous_days(duration_of_T_minusDays, app_id=app_id, la
     
 def thumbs_count():
     pass
-def get_no_Of_ratingsYesterday_avgRating(T_minus_days, app_id=app_id, language=language, country=country):
+def get_no_Of_ratingsYesterday_avgRating(T_minus_days=T_minus_days, app_id=app_id, language=language, country=country):
     try:
         yesterdays = split_trendwise_wrt_previous_days(T_minus_days, app_id, language, country)
+        # Print column names for debugging
+        #print("Column Names in yesterdays DataFrame:", yesterdays.columns)
 
         if yesterdays is None:
             # Handle the case where an error occurred during trendwise rating count calculation
             print("Unable to fetch yesterday's ratings.")
             return None
-
+        # Ensure all required columns are present
+        required_columns = ['1 Star Ratings', '2 Star Ratings', '3 Star Ratings', '4 Star Ratings', '5 Star Ratings']
+        for col in required_columns:
+            if col not in yesterdays.columns:
+                # Add the missing column with default value 0
+                yesterdays[col] = 0
         # Calculate weighted average for each row across specified columns
-        ratings_columns = ['1 Star Ratings', '2 Star Ratings', '3 Star Ratings', '4 Star Ratings', '5 Star Ratings']
+        ratings_columns = required_columns
         weighted_average = (
             (yesterdays[ratings_columns] * [1, 2, 3, 4, 5]).sum(axis=1) / yesterdays['Total Ratings']
         )
@@ -288,9 +295,12 @@ data_to_write = f" Date of Analysis = {date_analysis}\n also LAST {T_minus_days}
 
 # Add a paragraph to the document
 doc.add_paragraph()
-'''    
+'''
 
 yesterday=get_no_Of_ratingsYesterday_avgRating(T_minus_days)
+
+
+
 
 # locating the latest date
 yesterday['at'] = pd.to_datetime(yesterday['at'])
@@ -505,7 +515,7 @@ doc.add_paragraph("\n" * 1)
 doc.add_paragraph(f"Displaying all the reviews of last {T_minus_days-3} Days along with all related details\n")
 end_date=get_current_datetime().strftime("%Y-%m-%d")
 start_date=(get_current_datetime() - timedelta(days=T_minus_days)).strftime("%Y-%m-%d")
-yesterday=filtered_review(T_minus_days-3)
+yesterday=filtered_review(T_minus_days-2)
 yesterday=pd.DataFrame(yesterday)
 # Extract specific columns
 selected_columns = ['userName', 'content', 'at', 'score', 'thumbsUpCount', 'appVersion', 'replyContent']
@@ -520,7 +530,8 @@ yesterday['at'] = pd.to_datetime(yesterday['at'])
 
 # Format 'at' column without seconds
 yesterday['at'] = yesterday['at'].dt.strftime('%H:%M')
-
+#changing the name of the column at to date
+yesterday.rename(columns={'at': 'Time'}, inplace=True)
 
 
 table = doc.add_table(yesterday.shape[0]+1, yesterday.shape[1])
