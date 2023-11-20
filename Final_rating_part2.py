@@ -502,10 +502,10 @@ doc.add_paragraph("\n" * 1)
 #displaying all review details of last selected days
 
 # Write the DataFrame to the document in tabular form
-doc.add_paragraph(f"Displaying all the reviews of last {T_minus_days} Days along with all related details\n")
+doc.add_paragraph(f"Displaying all the reviews of last {T_minus_days-3} Days along with all related details\n")
 end_date=get_current_datetime().strftime("%Y-%m-%d")
 start_date=(get_current_datetime() - timedelta(days=T_minus_days)).strftime("%Y-%m-%d")
-yesterday=filtered_review(T_minus_days)
+yesterday=filtered_review(T_minus_days-3)
 yesterday=pd.DataFrame(yesterday)
 # Extract specific columns
 selected_columns = ['userName', 'content', 'at', 'score', 'thumbsUpCount', 'appVersion', 'replyContent']
@@ -519,7 +519,7 @@ yesterday.rename(columns={'score': 'Rating'}, inplace=True)
 yesterday['at'] = pd.to_datetime(yesterday['at'])
 
 # Format 'at' column without seconds
-yesterday['at'] = yesterday['at'].dt.strftime('%Y-%m-%d %H:%M')
+yesterday['at'] = yesterday['at'].dt.strftime('%H:%M')
 
 
 

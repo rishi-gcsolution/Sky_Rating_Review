@@ -219,7 +219,7 @@ ax1.tick_params('y', colors='b')
 ax2 = ax1.twinx()
 
 # Line graph (Weighted Average Rating)
-line_plot = ax2.plot(latest_rows['Date'][::-1], latest_rows['Average Rating'][::-1], marker='o', linestyle='-', color='r', label='Average Rating')
+line_plot = ax2.plot(latest_rows['Date'][::-1], latest_rows['Average Rating'][::-1], marker='o', linestyle='-', color='r', label='Average Rating',alpha=0.7)
 
 # Display values at points on the line graph
 for point, value in zip(line_plot[0].get_data()[0], latest_rows['Average Rating'][::-1]):
