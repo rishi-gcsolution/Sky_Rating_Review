@@ -136,7 +136,7 @@ desired_columns = ['Date', 'Total Rating', '5 stars', '4 stars', '3 stars', '2 s
 # Create a new DataFrame with the reordered columns
 latest_rows = latest_rows[desired_columns]
 
-#######################################
+##################################################################################
 # Create a Word document
 
 # saving to ms Word
@@ -147,13 +147,17 @@ doc = Document()
 
 # Write the date to the document
 
+
+data_to_write = f" {get_current_datetime().strftime('%dth %b')}\n"
+doc.add_paragraph(data_to_write)
+
 data_to_write = "                       HDFC SKY ANDROID APP\n"
 doc.add_paragraph(data_to_write)
 
-data_to_write = f" {get_current_datetime().strftime('%dth %b')} -- Rating and Reviews\n"
+data_to_write = f" {(get_current_datetime() - timedelta(days=1)).strftime('%dth %b')} -- Rating and Reviews\n"
 doc.add_paragraph(data_to_write)
 
-data_to_write = f" Google Rating as of {get_current_datetime().strftime('%dth %b')}\n"
+data_to_write = f" Google Rating as of {(get_current_datetime() - timedelta(days=1)).strftime('%dth %b')}\n"
 doc.add_paragraph(data_to_write)
 
 # printing Google Rating Sections
@@ -170,12 +174,18 @@ for col_num, col_name in enumerate(df_Google_Ratings.columns):
 doc.add_paragraph("\n" * 2)
 
 
-data_to_write = f" Total no of rating on {latest_rows.loc[0, 'Date']} is {latest_rows.loc[0, 'Total Rating']} at an average of {latest_rows.loc[0, 'Weighted Average Rating']}"
+data_to_write = f" Total no of rating on {latest_rows.loc[0, 'Date']} = {latest_rows.loc[0, 'Total Rating']} "
+doc.add_paragraph(data_to_write)
+
+
+data_to_write = f"Average of Ratings on {latest_rows.loc[0, 'Date']} = {latest_rows.loc[0, 'Weighted Average Rating']} "
 doc.add_paragraph(data_to_write)
 
 
 # Write the DataFrame to the document in tabular form
 doc.add_paragraph(f"Break up of ratings of {x_days} days")
+
+latest_rows.rename(columns={'Weighted Average Rating': 'Average Rating'}, inplace=True)
 
 table = doc.add_table(latest_rows.shape[0]+1, latest_rows.shape[1])
 
@@ -187,7 +197,7 @@ for col_num, col_name in enumerate(latest_rows.columns):
 # Write two lines of empty space
 doc.add_paragraph("\n" * 11)
 
-doc.add_paragraph('Plotting both line graph and Bar graph of Breakup of Ratings')
+doc.add_paragraph(f'Trend of last {x_days} (Average Rating V/S Total Rating)')
 
 
 # Plotting both line graph and bar graph on the same plot# Plotting both line graph and bar graph on the same plot
@@ -201,7 +211,7 @@ for bar, value in zip(bar_plot, latest_rows['Total Rating'][::-1]):
     height = bar.get_height()
     ax1.text(bar.get_x() + bar.get_width() / 2, height, value, ha='center', va='bottom', color='black')
 
-ax1.set_xlabel('Date')
+#ax1.set_xlabel('Date')
 ax1.set_ylabel('Total Rating', color='b')
 ax1.tick_params('y', colors='b')
 
@@ -209,17 +219,17 @@ ax1.tick_params('y', colors='b')
 ax2 = ax1.twinx()
 
 # Line graph (Weighted Average Rating)
-line_plot = ax2.plot(latest_rows['Date'][::-1], latest_rows['Weighted Average Rating'][::-1], marker='o', linestyle='-', color='r', label='Weighted Average Rating')
+line_plot = ax2.plot(latest_rows['Date'][::-1], latest_rows['Average Rating'][::-1], marker='o', linestyle='-', color='r', label='Average Rating')
 
 # Display values at points on the line graph
-for point, value in zip(line_plot[0].get_data()[0], latest_rows['Weighted Average Rating'][::-1]):
+for point, value in zip(line_plot[0].get_data()[0], latest_rows['Average Rating'][::-1]):
     ax2.text(point, value, value, ha='right', va='bottom', color='black')
 
-ax2.set_ylabel('Weighted Average Rating', color='r')
+ax2.set_ylabel('Avg Rating', color='r')
 ax2.tick_params('y', colors='r')
 
 # Set title and legend
-plt.title('Line and Bar Graphs')
+#plt.title('Line and Bar Graphs')
 fig.tight_layout()
 plt.legend(loc='upper left')
 

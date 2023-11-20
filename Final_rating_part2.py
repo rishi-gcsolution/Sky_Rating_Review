@@ -281,25 +281,49 @@ run_reviews.bold = True  # Bold part
 paragraph.add_run(data_to_write[data_to_write.find("Reviews") + len("Reviews"):])  # Non-bold part
 
 
-
+'''
 date_analysis = get_current_datetime().strftime('%Y-%m-%d')
 #T_minus_days = 7  # Replace with your desired value
 data_to_write = f" Date of Analysis = {date_analysis}\n also LAST {T_minus_days} days analysis \n"
 
 # Add a paragraph to the document
 doc.add_paragraph()
-    
+'''    
 
-data_to_write = f"Over All Rating of all Reviews given = {round(overall_rating, 2)}\n also Given LAST {T_minus_days} Days Rating = {round(interval_rating,2)} Stars out of {len(filtered_review(T_minus_days))} given reviews\n"
+yesterday=get_no_Of_ratingsYesterday_avgRating(T_minus_days)
+
+# locating the latest date
+yesterday['at'] = pd.to_datetime(yesterday['at'])
+latest_date_row = yesterday.loc[yesterday['at'].idxmax()]
+
+
+# Extract the Total Ratings from the latest date row
+#total_ratings_latest_date = latest_date_row['Total Ratings']
+
+data_to_write = f" Total no of reviews on {(get_current_datetime() - timedelta(days=1)).strftime('%dth %b')} =  {latest_date_row['Total Ratings']} \n Average ratings of all Reviews on {yesterday.loc[yesterday['at'].idxmax()][0].strftime('%dth %b')} = {round(overall_rating, 2)}\n"
 doc.add_paragraph(data_to_write)
 
 
-data_to_write = "Rating Split Analysis"
-doc.add_paragraph(data_to_write)
+#data_to_write = "Rating Split Analysis"
+#doc.add_paragraph(data_to_write)
 
 # Write the DataFrame to the document in tabular form
-doc.add_paragraph(f"Rating Split Analysis of Last {T_minus_days} days:")
-yesterday=get_no_Of_ratingsYesterday_avgRating(T_minus_days)
+doc.add_paragraph(f"Reviews analysis of Last {T_minus_days} days:")
+
+#changing the order of yesterday dataframe
+
+#changing the column order
+# Specify the desired column order
+desired_columns = ['at','Total Ratings', '5 Star Ratings', '4 Star Ratings', '3 Star Ratings', '2 Star Ratings', '1 Star Ratings', 'Weighted Average Rating']
+
+# Create a new DataFrame with the reordered columns
+yesterday = yesterday[desired_columns]
+
+yesterday['at']=yesterday['at'].dt.strftime('%b %d')
+# Rename the 'A' column to 'X'
+yesterday.rename(columns={'Weighted Average Rating': 'Average Rating'}, inplace=True)
+
+
 table = doc.add_table(yesterday.shape[0]+1, yesterday.shape[1])
 
 for col_num, col_name in enumerate(yesterday.columns):
@@ -310,8 +334,8 @@ for col_num, col_name in enumerate(yesterday.columns):
 # Write two lines of empty space
 doc.add_paragraph("\n" * 1)
 
-#trend of last selected days DATA and LINE GRAPH
 
+'''
 # Write the DataFrame to the document in tabular form
 doc.add_paragraph(f"Trend of Last {T_minus_days} selected days ")
 xx=Trend_of_Tminus_days(T_minus_days)
@@ -324,10 +348,12 @@ for col_num, col_name in enumerate(df_xx.columns):
     for row_num in range(df_xx.shape[0]):
         table.cell(row_num+1, col_num).text = str(df_xx.iloc[row_num, col_num])
 
+'''
 
 
 # Extract x and y values from the list
 #xx=xx[::-1]
+xx=Trend_of_Tminus_days(T_minus_days)
 x_values = [pair[1] for pair in xx]
 y_values = [pair[0] for pair in xx]
 
@@ -346,6 +372,8 @@ doc.add_paragraph("Net Split Data:")
 for key, value in net_split_data.items():
     doc.add_paragraph(f"{key}: {value}")
 
+'''
+#trend of last selected days DATA and LINE GRAPH
 # Plotting
 plt.bar(net_split_data.keys(), net_split_data.values())
 plt.xlabel('Rating Score')
@@ -360,11 +388,63 @@ plt.close()
 
 # Add the plot to the Word document
 doc.add_picture(docx_file_path.replace('.docx', '_plot_netSplit.png'))
+'''
+
+
+
+
+# Plotting both line graph and bar graph on the same plot# Plotting both line graph and bar graph on the same plot
+fig, ax1 = plt.subplots()
+
+# Bar graph (Total Rating)
+bar_plot = ax1.bar(yesterday['at'], yesterday['Total Ratings'], color='b', alpha=0.7, label='Total Rating')
+
+# Display values at points on the bar graph
+for bar, value in zip(bar_plot, yesterday['Total Ratings']):
+    height = bar.get_height()
+    ax1.text(bar.get_x() + bar.get_width() / 2, height, value, ha='center', va='bottom', color='black')
+
+#ax1.set_xlabel('Date')
+ax1.set_ylabel('Total Rating', color='b')
+ax1.tick_params('y', colors='b')
+
+# Create a second y-axis for the line graph
+ax2 = ax1.twinx()
+
+# Line graph (Weighted Average Rating)
+#either use x_values or same date value can also be extracted via yesterday variable 
+line_plot = ax2.plot(yesterday['at'], yesterday['Average Rating'], linestyle='-', color='r', label='Average Rating')
+
+
+# Display values at points on the line graph
+for point, value in zip(line_plot[0].get_data()[0], yesterday['Average Rating']):
+    ax2.text(point, value, value, ha='right', va='bottom', color='black')
+
+ax2.set_ylabel('Avg Rating', color='r')
+ax2.tick_params('y', colors='r')
+
+# Set title and legend
+#plt.title('Line and Bar Graphs')
+fig.tight_layout()
+plt.legend(loc='upper left')
+
+# Save the plot below the previously added data
+plt.savefig(docx_file_path.replace('.docx', '_plot_netSplit.png'))
+
+# Close the plot to free up resources
+plt.close()
+
+# Add the plot to the Word document
+doc.add_picture(docx_file_path.replace('.docx', '_plot_netSplit.png'))
+
+
+
+'''
 
 # Write two lines of empty space
 doc.add_paragraph("\n" * 1)
 
-
+xx=Trend_of_Tminus_days(T_minus_days)
 # Assuming xx is a list of pairs [(rating, date_str), ...]
 x_values = [pair[1] for pair in xx]
 y_values = [pair[0] for pair in xx]
@@ -415,7 +495,7 @@ plt.close()
 # Add the combined plot to the Word document
 doc.add_picture(docx_file_path.replace('.docx', '_combined_plots.png'))
 
-
+'''
 # Write two lines of empty space
 doc.add_paragraph("\n" * 1)
 
